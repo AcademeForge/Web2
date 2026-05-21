@@ -1028,19 +1028,22 @@ body.lock {
 
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
 <script>
 "use strict";
 
-const SUPABASE_URL = "https://afooyyydhlwngzssgqih.supabase.co";
-const SUPABASE_ANON_KEY = "PASTE_YOUR_SUPABASE_ANON_KEY_HERE";
-const APK_URL = "academeforge.apk";
-const CACHE = "af_fullscreen_v3";
+/* =========================================================
+   ACADEMEFORGE WEBSITE SCRIPT
+   Edge Function Analytics Version
+   Direct Supabase browser insert removed
+========================================================= */
 
-const db = window.supabase && SUPABASE_ANON_KEY !== "PASTE_YOUR_SUPABASE_ANON_KEY_HERE"
-  ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
-  : null;
+const ACADEMEFORGE_ANALYTICS_ENDPOINT =
+  "https://afooyyydhlwngzssgqih.supabase.co/functions/v1/academeforge-analytics";
+
+const APK_URL = "academeforge.apk";
+
+const ANALYTICS_CACHE_KEY = "academeforge_analytics_cache_v2";
+const DEVICE_ID_KEY = "academeforge_device_id_v2";
 
 const TEXT = {
   vision:
@@ -1071,31 +1074,75 @@ const TEXT = {
     "Students should use only official AcademeForge links, avoid sharing OTPs or passwords, and report suspicious messages. Help desk and support channels should be used for platform issues."
 };
 
+/* =========================================================
+   SAFE DOM HELPERS
+========================================================= */
+
+function qs(selector) {
+  return document.querySelector(selector);
+}
+
+function qsa(selector) {
+  return Array.from(document.querySelectorAll(selector));
+}
+
+function byId(id) {
+  return document.getElementById(id);
+}
+
 function esc(value) {
-  return String(value ?? "").replace(/[&<>]/g, function (match) {
+  return String(value ?? "").replace(/[&<>"]/g, function (match) {
     return {
       "&": "&amp;",
       "<": "&lt;",
-      ">": "&gt;"
+      ">": "&gt;",
+      '"': "&quot;"
     }[match];
   });
 }
 
 function paras(text) {
   return esc(text)
-    .split(/\\n\\s*\\n/g)
+    .split(/\n\s*\n/g)
     .map(function (item) {
-      return "<p>" + item.replace(/\\n/g, "<br>") + "</p>";
+      return "<p>" + item.replace(/\n/g, "<br>") + "</p>";
     })
     .join("");
 }
 
-function info(title, text) {
-  document.getElementById("mtitle").textContent = title;
-  document.getElementById("mtext").innerHTML = paras(text);
-  document.getElementById("modal").classList.remove("hidden");
-  document.getElementById("modal").classList.add("flex");
+function safeNumber(value) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : 0;
+}
+
+function formatCount(value) {
+  return safeNumber(value).toLocaleString("en-IN") + "+";
+}
+
+/* =========================================================
+   MODAL SYSTEM
+========================================================= */
+
+function openModal(title, htmlContent) {
+  const modal = byId("modal");
+  const titleNode = byId("mtitle");
+  const textNode = byId("mtext");
+
+  if (!modal || !titleNode || !textNode) {
+    alert(title + "\n\n" + String(htmlContent).replace(/<[^>]*>/g, ""));
+    return;
+  }
+
+  titleNode.textContent = title;
+  textNode.innerHTML = htmlContent;
+
+  modal.classList.remove("hidden");
+  modal.classList.add("flex");
   document.body.classList.add("lock");
+}
+
+function info(title, text) {
+  openModal(title, paras(text));
 }
 
 function soon(name) {
@@ -1106,177 +1153,414 @@ function soon(name) {
 }
 
 function closeModal() {
-  document.getElementById("modal").classList.add("hidden");
-  document.getElementById("modal").classList.remove("flex");
+  const modal = byId("modal");
+  if (!modal) return;
+
+  modal.classList.add("hidden");
+  modal.classList.remove("flex");
   document.body.classList.remove("lock");
 }
 
 function course(title, duration, fees, syllabus, facilities) {
-  document.getElementById("mtitle").textContent = title;
-  document.getElementById("mtext").innerHTML =
+  openModal(
+    title,
     '<div class="grid gap-4">' +
-    '<div class="rounded-3xl border border-white/10 bg-white/[.06] p-5"><b>Duration</b><p>' + esc(duration) + '</p></div>' +
-    '<div class="rounded-3xl border border-white/10 bg-white/[.06] p-5"><b>Fees</b><p>' + esc(fees) + '</p></div>' +
-    '<div class="rounded-3xl border border-white/10 bg-white/[.06] p-5"><b>Learning Scope</b><p>' + esc(syllabus) + '</p></div>' +
-    '<div class="rounded-3xl border border-white/10 bg-white/[.06] p-5"><b>Labs & Support</b><p>' + esc(facilities) + '</p></div>' +
-    '</div>';
-
-  document.getElementById("modal").classList.remove("hidden");
-  document.getElementById("modal").classList.add("flex");
-  document.body.classList.add("lock");
+      '<div class="rounded-3xl border border-white/10 bg-white/[.06] p-5">' +
+        '<b>Duration</b>' +
+        '<p>' + esc(duration) + '</p>' +
+      '</div>' +
+      '<div class="rounded-3xl border border-white/10 bg-white/[.06] p-5">' +
+        '<b>Fees</b>' +
+        '<p>' + esc(fees) + '</p>' +
+      '</div>' +
+      '<div class="rounded-3xl border border-white/10 bg-white/[.06] p-5">' +
+        '<b>Learning Scope</b>' +
+        '<p>' + esc(syllabus) + '</p>' +
+      '</div>' +
+      '<div class="rounded-3xl border border-white/10 bg-white/[.06] p-5">' +
+        '<b>Labs & Support</b>' +
+        '<p>' + esc(facilities) + '</p>' +
+      '</div>' +
+    '</div>'
+  );
 }
 
-function deviceId() {
+/* =========================================================
+   DEVICE + LOCAL CACHE
+========================================================= */
+
+function getDeviceId() {
   try {
-    let value = localStorage.getItem("websiteDeviceId");
+    let value = localStorage.getItem(DEVICE_ID_KEY);
+
     if (!value) {
-      value = "web_" + Date.now() + "_" + Math.random().toString(36).slice(2);
-      localStorage.setItem("websiteDeviceId", value);
+      const cryptoPart =
+        window.crypto && window.crypto.getRandomValues
+          ? Array.from(window.crypto.getRandomValues(new Uint32Array(3)))
+              .map(function (item) {
+                return item.toString(36);
+              })
+              .join("")
+          : Math.random().toString(36).slice(2);
+
+      value = "af_" + Date.now().toString(36) + "_" + cryptoPart;
+      localStorage.setItem(DEVICE_ID_KEY, value);
     }
+
     return value;
   } catch (error) {
-    return "web_" + Date.now();
+    return "af_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2);
   }
 }
 
-function setCache(key, value) {
+function getAnalyticsCache() {
   try {
-    localStorage.setItem(CACHE + "_" + key, String(value || 0));
-  } catch (error) {}
-}
-
-function getCache(key) {
-  try {
-    return Number(localStorage.getItem(CACHE + "_" + key) || "0");
-  } catch (error) {
-    return 0;
-  }
-}
-
-function putCount(id, value) {
-  const element = document.getElementById(id);
-  if (element) element.textContent = Number(value || 0) + "+";
-}
-
-async function insertRow(table, payload) {
-  if (!db) return;
-
-  try {
-    await db.from(table).insert([payload]);
-  } catch (error) {}
-}
-
-async function loadCount(table, elementId, cacheKey) {
-  putCount(elementId, getCache(cacheKey));
-
-  if (!db || !navigator.onLine) return;
-
-  try {
-    const result = await db.from(table).select("*", { count: "exact", head: true });
-    if (!result.error) {
-      setCache(cacheKey, result.count || 0);
-      putCount(elementId, result.count || 0);
+    const raw = localStorage.getItem(ANALYTICS_CACHE_KEY);
+    if (!raw) {
+      return {
+        apk_downloads: 0,
+        website_visits: 0,
+        last_visit_tracked_at: 0
+      };
     }
+
+    const parsed = JSON.parse(raw);
+
+    return {
+      apk_downloads: safeNumber(parsed.apk_downloads),
+      website_visits: safeNumber(parsed.website_visits),
+      last_visit_tracked_at: safeNumber(parsed.last_visit_tracked_at)
+    };
+  } catch (error) {
+    return {
+      apk_downloads: 0,
+      website_visits: 0,
+      last_visit_tracked_at: 0
+    };
+  }
+}
+
+function setAnalyticsCache(nextCache) {
+  try {
+    localStorage.setItem(
+      ANALYTICS_CACHE_KEY,
+      JSON.stringify({
+        apk_downloads: safeNumber(nextCache.apk_downloads),
+        website_visits: safeNumber(nextCache.website_visits),
+        last_visit_tracked_at: safeNumber(nextCache.last_visit_tracked_at)
+      })
+    );
   } catch (error) {}
+}
+
+function setCounterText(elementId, value) {
+  const element = byId(elementId);
+  if (!element) return;
+
+  element.textContent = formatCount(value);
+}
+
+function updateCountersFromCache() {
+  const cache = getAnalyticsCache();
+
+  setCounterText("apkCount", cache.apk_downloads);
+  setCounterText("visitCount", cache.website_visits);
+}
+
+function updateCountersFromServerData(data) {
+  if (!data || typeof data !== "object") return;
+
+  const oldCache = getAnalyticsCache();
+
+  const nextCache = {
+    apk_downloads: safeNumber(data.apk_downloads ?? oldCache.apk_downloads),
+    website_visits: safeNumber(data.website_visits ?? oldCache.website_visits),
+    last_visit_tracked_at: oldCache.last_visit_tracked_at
+  };
+
+  setAnalyticsCache(nextCache);
+  updateCountersFromCache();
+}
+
+/* =========================================================
+   EDGE FUNCTION ANALYTICS
+========================================================= */
+
+async function sendAnalytics(action, extraPayload) {
+  if (!navigator.onLine) {
+    return {
+      success: false,
+      offline: true,
+      error: "Offline"
+    };
+  }
+
+  const payload = {
+    action: action,
+    device_id: getDeviceId(),
+    page_url: window.location.href,
+    user_agent: navigator.userAgent,
+    ...(extraPayload || {})
+  };
+
+  try {
+    const response = await fetch(ACADEMEFORGE_ANALYTICS_ENDPOINT, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload),
+      keepalive: true,
+      cache: "no-store"
+    });
+
+    let result = null;
+
+    try {
+      result = await response.json();
+    } catch (jsonError) {
+      result = null;
+    }
+
+    if (!response.ok) {
+      return {
+        success: false,
+        status: response.status,
+        error:
+          result && result.error
+            ? result.error
+            : "Analytics request failed"
+      };
+    }
+
+    if (result && result.success && result.data) {
+      updateCountersFromServerData(result.data);
+    }
+
+    return result || { success: true };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Network request failed"
+    };
+  }
+}
+
+async function fetchAnalyticsCounts() {
+  const result = await sendAnalytics("counts", {});
+
+  if (result && result.success && result.data) {
+    updateCountersFromServerData(result.data);
+  }
+
+  return result;
+}
+
+async function trackWebsiteVisit() {
+  const cache = getAnalyticsCache();
+  const now = Date.now();
+  const THIRTY_MINUTES = 30 * 60 * 1000;
+
+  updateCountersFromCache();
+
+  if (now - cache.last_visit_tracked_at < THIRTY_MINUTES) {
+    await fetchAnalyticsCounts();
+    return;
+  }
+
+  const optimisticCache = {
+    ...cache,
+    website_visits: cache.website_visits + 1,
+    last_visit_tracked_at: now
+  };
+
+  setAnalyticsCache(optimisticCache);
+  updateCountersFromCache();
+
+  const result = await sendAnalytics("website_visit", {});
+
+  if (!result || !result.success) {
+    setAnalyticsCache({
+      ...optimisticCache,
+      last_visit_tracked_at: now
+    });
+  }
 }
 
 async function downloadApk() {
-  if (navigator.onLine) {
-    await insertRow("apk_downloads", {
-      device_id: deviceId(),
-      user_agent: navigator.userAgent,
-      page_url: location.href,
-      download_source: "main_website"
+  const cache = getAnalyticsCache();
+
+  const optimisticCache = {
+    ...cache,
+    apk_downloads: cache.apk_downloads + 1
+  };
+
+  setAnalyticsCache(optimisticCache);
+  updateCountersFromCache();
+
+  await sendAnalytics("apk_download", {
+    download_source: "main_website"
+  });
+
+  try {
+    const anchor = document.createElement("a");
+    anchor.href = APK_URL;
+    anchor.download = "academeforge.apk";
+    anchor.rel = "noopener noreferrer";
+
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+  } catch (error) {
+    window.location.href = APK_URL;
+  }
+}
+
+/* =========================================================
+   OFFLINE BANNER
+========================================================= */
+
+function offlineSync() {
+  const offline = byId("offline");
+  if (!offline) return;
+
+  offline.classList.toggle("hidden", navigator.onLine);
+}
+
+window.addEventListener("online", function () {
+  offlineSync();
+  fetchAnalyticsCounts();
+});
+
+window.addEventListener("offline", offlineSync);
+
+/* =========================================================
+   MOBILE MENU
+========================================================= */
+
+function openMobileMenu() {
+  const menu = byId("menu");
+  if (!menu) return;
+
+  menu.classList.add("open");
+  document.body.classList.add("lock");
+}
+
+function closeMobileMenu() {
+  const menu = byId("menu");
+  if (!menu) return;
+
+  menu.classList.remove("open");
+  document.body.classList.remove("lock");
+}
+
+/* =========================================================
+   UI INIT
+========================================================= */
+
+function initMobileMenu() {
+  const openMenu = byId("openMenu");
+  const closeMenu = byId("closeMenu");
+
+  if (openMenu) {
+    openMenu.addEventListener("click", openMobileMenu);
+  }
+
+  if (closeMenu) {
+    closeMenu.addEventListener("click", closeMobileMenu);
+  }
+
+  qsa(".mlnk").forEach(function (link) {
+    link.addEventListener("click", closeMobileMenu);
+  });
+}
+
+function initFaq() {
+  qsa(".faq").forEach(function (faq) {
+    faq.addEventListener("click", function () {
+      qsa(".faq.open").forEach(function (item) {
+        if (item !== faq) item.classList.remove("open");
+      });
+
+      faq.classList.toggle("open");
+    });
+  });
+}
+
+function initModalEvents() {
+  const modal = byId("modal");
+
+  if (modal) {
+    modal.addEventListener("click", function (event) {
+      if (event.target === modal) {
+        closeModal();
+      }
     });
   }
 
-  const next = getCache("apk") + 1;
-  setCache("apk", next);
-  putCount("apkCount", next);
-
-  const anchor = document.createElement("a");
-  anchor.href = APK_URL;
-  anchor.download = "academeforge.apk";
-  document.body.appendChild(anchor);
-  anchor.click();
-  anchor.remove();
+  document.addEventListener("keydown", function (event) {
+    if (event.key === "Escape") {
+      closeModal();
+      closeMobileMenu();
+    }
+  });
 }
 
-function offlineSync() {
-  document.getElementById("offline").classList.toggle("hidden", navigator.onLine);
-}
+function initRevealAnimations() {
+  const elements = qsa(".reveal");
 
-window.addEventListener("online", offlineSync);
-window.addEventListener("offline", offlineSync);
-
-document.getElementById("openMenu").onclick = function () {
-  document.getElementById("menu").classList.add("open");
-  document.body.classList.add("lock");
-};
-
-document.getElementById("closeMenu").onclick = function () {
-  document.getElementById("menu").classList.remove("open");
-  document.body.classList.remove("lock");
-};
-
-document.querySelectorAll(".mlnk").forEach(function (link) {
-  link.onclick = function () {
-    document.getElementById("menu").classList.remove("open");
-    document.body.classList.remove("lock");
-  };
-});
-
-document.querySelectorAll(".faq").forEach(function (faq) {
-  faq.onclick = function () {
-    document.querySelectorAll(".faq.open").forEach(function (item) {
-      if (item !== faq) item.classList.remove("open");
+  if (!("IntersectionObserver" in window)) {
+    elements.forEach(function (element) {
+      element.classList.add("show");
     });
-    faq.classList.toggle("open");
-  };
-});
+    return;
+  }
 
-document.getElementById("modal").addEventListener("click", function (event) {
-  if (event.target === document.getElementById("modal")) closeModal();
-});
-
-document.addEventListener("keydown", function (event) {
-  if (event.key === "Escape") closeModal();
-});
-
-const observer = "IntersectionObserver" in window
-  ? new IntersectionObserver(function (entries) {
+  const observer = new IntersectionObserver(
+    function (entries) {
       entries.forEach(function (entry) {
         if (entry.isIntersecting) {
           entry.target.classList.add("show");
           observer.unobserve(entry.target);
         }
       });
-    }, { threshold: .12 })
-  : null;
+    },
+    {
+      threshold: 0.12,
+      rootMargin: "0px 0px -40px 0px"
+    }
+  );
 
-document.querySelectorAll(".reveal").forEach(function (element) {
-  if (observer) observer.observe(element);
-  else element.classList.add("show");
-});
+  elements.forEach(function (element) {
+    observer.observe(element);
+  });
+}
 
-(async function init() {
+function initExternalSoonButtons() {
+  qsa("[data-soon]").forEach(function (button) {
+    button.addEventListener("click", function () {
+      soon(button.getAttribute("data-soon") || "Feature");
+    });
+  });
+}
+
+/* =========================================================
+   BOOT
+========================================================= */
+
+document.addEventListener("DOMContentLoaded", async function () {
   offlineSync();
 
-  const visits = getCache("visits") + 1;
-  setCache("visits", visits);
-  putCount("visitCount", visits);
+  initMobileMenu();
+  initFaq();
+  initModalEvents();
+  initRevealAnimations();
+  initExternalSoonButtons();
 
-  if (navigator.onLine) {
-    await insertRow("website_visits", {
-      device_id: deviceId(),
-      page_url: location.href,
-      user_agent: navigator.userAgent
-    });
-  }
+  updateCountersFromCache();
 
-  await loadCount("apk_downloads", "apkCount", "apk");
-  await loadCount("website_visits", "visitCount", "visits");
-})();
+  await trackWebsiteVisit();
+});
 </script>
 </body>
 </html>
