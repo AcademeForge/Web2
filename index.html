@@ -561,6 +561,201 @@ body.lock {
     transition-duration: .001ms !important;
   }
 }
+  .marquee-track {
+  display: flex;
+  width: max-content;
+  min-width: 200%;
+  animation: afMarquee 26s linear infinite;
+  will-change: transform;
+}
+
+.marquee-group {
+  flex: 0 0 auto;
+  min-width: 50vw;
+  display: flex;
+  align-items: center;
+  gap: 2.5rem;
+  padding-inline: 1.25rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+@keyframes afMarquee {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marquee-track {
+    animation: none !important;
+    transform: none !important;
+  }
+}
+  .glass {
+  background: linear-gradient(180deg, var(--panel), rgba(255,255,255,.42));
+  border: 1px solid var(--line);
+  box-shadow: 0 26px 90px rgba(15,23,42,.12);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+@media (prefers-color-scheme: dark) {
+  .glass {
+    background: linear-gradient(180deg, rgba(255,255,255,.11), rgba(255,255,255,.045));
+    border: 1px solid var(--line);
+    box-shadow: 0 26px 90px rgba(0,0,0,.32);
+  }
+}
+
+.bg-ink\/95,
+.bg-ink\/92,
+.bg-ink\/80,
+.bg-ink\/96 {
+  background-color: rgba(255,255,255,.86) !important;
+  color: var(--text);
+}
+
+@media (prefers-color-scheme: dark) {
+  .bg-ink\/95 {
+    background-color: rgba(5,8,22,.95) !important;
+  }
+
+  .bg-ink\/92 {
+    background-color: rgba(5,8,22,.92) !important;
+  }
+
+  .bg-ink\/80 {
+    background-color: rgba(5,8,22,.80) !important;
+  }
+
+  .bg-ink\/96 {
+    background-color: rgba(5,8,22,.96) !important;
+  }
+}
+
+.text-slate-300,
+.text-slate-400,
+.text-slate-500 {
+  color: var(--muted) !important;
+}
+
+.nav a,
+.nav button {
+  color: var(--soft);
+}
+
+.nav a:hover,
+.nav button:hover {
+  color: var(--text);
+}
+
+.secondary {
+  background: rgba(15,23,42,.055);
+  border: 1px solid rgba(15,23,42,.14);
+  color: var(--text);
+}
+
+.darkbtn {
+  background: rgba(15,23,42,.88);
+  border: 1px solid rgba(15,23,42,.14);
+  color: #fff;
+}
+
+@media (prefers-color-scheme: dark) {
+  .secondary {
+    background: rgba(255,255,255,.08);
+    border: 1px solid rgba(255,255,255,.14);
+    color: white;
+  }
+
+  .darkbtn {
+    background: rgba(5,8,22,.86);
+    border: 1px solid rgba(255,255,255,.14);
+    color: white;
+  }
+}
+
+.hero-title {
+  color: var(--text);
+}
+
+.hero-img + .absolute {
+  background: linear-gradient(to right, rgba(248,250,252,.98), rgba(248,250,252,.84), rgba(248,250,252,.24));
+}
+
+@media (prefers-color-scheme: dark) {
+  .hero-img + .absolute {
+    background: linear-gradient(to right, rgba(5,8,22,1), rgba(5,8,22,.86), rgba(5,8,22,.25));
+  }
+}
+
+#modal > div {
+  background: var(--inkPanel) !important;
+  color: var(--text);
+}
+
+.ai-chat-panel {
+  background:
+    radial-gradient(circle at 20% 0, rgba(249,115,22,.12), transparent 16rem),
+    radial-gradient(circle at 100% 20%, rgba(103,232,249,.10), transparent 14rem),
+    rgba(255,255,255,.96);
+  color: var(--text);
+  border: 1px solid rgba(15,23,42,.12);
+  box-shadow: 0 28px 90px rgba(15,23,42,.22);
+}
+
+.ai-msg.bot {
+  background: rgba(15,23,42,.055);
+  border: 1px solid rgba(15,23,42,.10);
+  color: var(--soft);
+}
+
+.ai-chat-form textarea {
+  border: 1px solid rgba(15,23,42,.12);
+  background: rgba(15,23,42,.055);
+  color: var(--text);
+}
+
+.ai-chat-suggestions button {
+  border: 1px solid rgba(15,23,42,.12);
+  background: rgba(15,23,42,.055);
+  color: var(--soft);
+}
+
+@media (prefers-color-scheme: dark) {
+  .ai-chat-panel {
+    background:
+      radial-gradient(circle at 20% 0, rgba(249,115,22,.16), transparent 16rem),
+      radial-gradient(circle at 100% 20%, rgba(103,232,249,.12), transparent 14rem),
+      rgba(5,8,22,.96);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,.14);
+    box-shadow: 0 28px 90px rgba(0,0,0,.50);
+  }
+
+  .ai-msg.bot {
+    background: rgba(255,255,255,.075);
+    border: 1px solid rgba(255,255,255,.10);
+    color: #e2e8f0;
+  }
+
+  .ai-chat-form textarea {
+    border: 1px solid rgba(255,255,255,.12);
+    background: rgba(255,255,255,.07);
+    color: #fff;
+  }
+
+  .ai-chat-suggestions button {
+    border: 1px solid rgba(255,255,255,.12);
+    background: rgba(255,255,255,.07);
+    color: #e2e8f0;
+  }
+}
 </style>
 </head>
 
@@ -588,15 +783,15 @@ body.lock {
   </div>
 
   <div class="overflow-hidden border-b border-white/10 bg-white/[.035]">
-    <div class="flex w-[200%] animate-marquee py-2.5">
-      <div class="min-w-1/2 flex gap-10 px-5 text-xs font-black uppercase tracking-[.22em] text-slate-300">
+   <div class="marquee-track py-2.5">
+  <div class="marquee-group text-xs font-black uppercase tracking-[.22em]">
         <span>Beta Version</span>
         <span>Website content is being updated</span>
         <span>Admissions under rebuild</span>
         <span>New batches coming soon</span>
         <span>Official information may change</span>
       </div>
-      <div class="min-w-1/2 flex gap-10 px-5 text-xs font-black uppercase tracking-[.22em] text-slate-300">
+    <div class="marquee-group text-xs font-black uppercase tracking-[.22em]">
         <span>Beta Version</span>
         <span>Website content is being updated</span>
         <span>Admissions under rebuild</span>
@@ -711,8 +906,8 @@ body.lock {
     </section>
 
     <section class="overflow-hidden border-y border-white/10 bg-white/[.035]">
-      <div class="flex w-[200%] animate-marquee py-4">
-        <div class="min-w-1/2 flex gap-10 px-5 text-sm font-black uppercase tracking-[.24em] text-slate-400">
+      <div class="marquee-track py-4">
+  <div class="marquee-group text-sm font-black uppercase tracking-[.24em]">
           <span>Creative Design</span>
           <span>Freelancing</span>
           <span>AI Productivity</span>
@@ -722,7 +917,7 @@ body.lock {
           <span>Community Learning</span>
           <span>Digital Confidence</span>
         </div>
-        <div class="min-w-1/2 flex gap-10 px-5 text-sm font-black uppercase tracking-[.24em] text-slate-400">
+       <div class="marquee-group text-sm font-black uppercase tracking-[.24em]">
           <span>Creative Design</span>
           <span>Freelancing</span>
           <span>AI Productivity</span>
