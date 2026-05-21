@@ -1937,34 +1937,176 @@ async function downloadApk() {
 /* =========================================================
    AI CHAT LOCAL FALLBACK
 ========================================================= */
-
 function findLocalAnswer(question) {
-  const q = String(question || "").toLowerCase();
+  const raw = String(question || "").trim();
+  const q = raw.toLowerCase();
 
-  const checks = [
-    { keys: ["fee", "fees", "price", "pricing", "cost"], answer: TEXT.fees },
-    { keys: ["admission", "apply", "enroll", "join course"], answer: "Admissions are currently under rebuild. New batches and official admission details will be announced after the platform structure is finalized." },
-    { keys: ["program", "course", "coding", "design", "editing", "freelancing"], answer: TEXT.programs },
-    { keys: ["founder", "devraj"], answer: TEXT.founder },
-    { keys: ["about", "story", "academe"], answer: TEXT.about },
-    { keys: ["vision", "mission"], answer: TEXT.vision },
-    { keys: ["privacy", "data"], answer: TEXT.data + "\n\n" + TEXT.privacy },
-    { keys: ["batch", "class", "schedule"], answer: TEXT.batch },
-    { keys: ["community", "telegram"], answer: TEXT.community },
-    { keys: ["support", "help", "contact", "call", "whatsapp"], answer: TEXT.support },
-    { keys: ["certificate"], answer: "Certificate verification and certificate download are planned features. They are currently updating soon." },
-    { keys: ["team", "career", "member"], answer: "Join as Team Member is planned. The website will show Updating soon until the official team application system is ready." }
-  ];
+  const isGreeting =
+    /^(hi|hii|hello|hey|heyy|namaste|namaskar|yo|sup|good morning|good afternoon|good evening)[!. ]*$/i.test(raw);
 
-  for (const item of checks) {
-    if (item.keys.some(function (key) { return q.includes(key); })) {
-      return item.answer;
-    }
+  if (isGreeting) {
+    return "Hi. How can I help you with AcademeForge?";
   }
 
-  return "AcademeForge is a beta practical-learning platform being rebuilt for future-ready students. You can ask me about programs, admissions, fees, founder, policies, student data usage, batches, certificates, or support.";
-}
+  const isThanks =
+    /^(thanks|thank you|thx|ok thanks|okay thanks|done|nice|great)[!. ]*$/i.test(raw);
 
+  if (isThanks) {
+    return "You’re welcome.";
+  }
+
+  const asksCoFounder =
+    q.includes("co founder") ||
+    q.includes("co-founder") ||
+    q.includes("cofounder") ||
+    q.includes("co founder name") ||
+    q.includes("co-founder name");
+
+  if (asksCoFounder) {
+    return "AcademeForge has no officially listed co-founder in the current website data. The only listed founder is Devraj Kumar.";
+  }
+
+  const asksFounder =
+    q.includes("founder") ||
+    q.includes("devraj") ||
+    q.includes("owner") ||
+    q.includes("started");
+
+  if (asksFounder) {
+    return TEXT.founder;
+  }
+
+  const asksAdmission =
+    q.includes("admission") ||
+    q.includes("apply") ||
+    q.includes("enroll") ||
+    q.includes("join course") ||
+    q.includes("registration");
+
+  if (asksAdmission) {
+    return "Admissions are currently under rebuild. New batches and official admission details will be announced after the platform structure, policies, and learning experience are finalized.";
+  }
+
+  const asksFees =
+    q.includes("fee") ||
+    q.includes("fees") ||
+    q.includes("price") ||
+    q.includes("pricing") ||
+    q.includes("cost") ||
+    q.includes("payment");
+
+  if (asksFees) {
+    return TEXT.fees;
+  }
+
+  const asksPrograms =
+    q.includes("program") ||
+    q.includes("course") ||
+    q.includes("courses") ||
+    q.includes("coding") ||
+    q.includes("design") ||
+    q.includes("editing") ||
+    q.includes("freelancing") ||
+    q.includes("video");
+
+  if (asksPrograms) {
+    return TEXT.programs;
+  }
+
+  const asksAbout =
+    q.includes("what is academeforge") ||
+    q.includes("about academeforge") ||
+    q.includes("about") ||
+    q.includes("company") ||
+    q.includes("platform");
+
+  if (asksAbout) {
+    return TEXT.about;
+  }
+
+  const asksVision =
+    q.includes("vision") ||
+    q.includes("mission") ||
+    q.includes("goal");
+
+  if (asksVision) {
+    return TEXT.vision;
+  }
+
+  const asksPrivacy =
+    q.includes("privacy") ||
+    q.includes("data") ||
+    q.includes("student data") ||
+    q.includes("personal information");
+
+  if (asksPrivacy) {
+    return TEXT.data + "\n\n" + TEXT.privacy;
+  }
+
+  const asksBatch =
+    q.includes("batch") ||
+    q.includes("class") ||
+    q.includes("schedule") ||
+    q.includes("timing") ||
+    q.includes("recording");
+
+  if (asksBatch) {
+    return TEXT.batch;
+  }
+
+  const asksCommunity =
+    q.includes("community") ||
+    q.includes("telegram") ||
+    q.includes("group");
+
+  if (asksCommunity) {
+    return TEXT.community;
+  }
+
+  const asksSupport =
+    q.includes("support") ||
+    q.includes("help") ||
+    q.includes("contact") ||
+    q.includes("call") ||
+    q.includes("whatsapp") ||
+    q.includes("email");
+
+  if (asksSupport) {
+    return TEXT.support;
+  }
+
+  const asksCertificate =
+    q.includes("certificate") ||
+    q.includes("verify") ||
+    q.includes("verification");
+
+  if (asksCertificate) {
+    return "Certificate download and certificate verification are planned features. They are currently updating soon until the official system is ready.";
+  }
+
+  const asksTeam =
+    q.includes("team") ||
+    q.includes("career") ||
+    q.includes("job") ||
+    q.includes("member") ||
+    q.includes("join as team");
+
+  if (asksTeam) {
+    return "Join as Team Member is planned. The website will show Updating soon until the official team application system is ready.";
+  }
+
+  const asksUnavailable =
+    q.includes("not available") ||
+    q.includes("available") ||
+    q.includes("launch") ||
+    q.includes("when");
+
+  if (asksUnavailable) {
+    return "Several AcademeForge features are still being rebuilt. Admissions, batches, certificates, and some platform actions will be announced when they are officially ready.";
+  }
+
+  return "I do not have confirmed information about that in the current AcademeForge website data. Ask me about programs, admissions, fees, founder, policies, batches, certificates, or support.";
+}
 function getAIHistory() {
   try {
     const raw = localStorage.getItem(AI_HISTORY_KEY);
