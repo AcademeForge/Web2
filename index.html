@@ -4,6 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
 <meta name="theme-color" content="#050816" />
+<meta name="description" content="AcademeForge Beta — Future Skills Learning Platform for practical learning, AI skills, coding, design, freelancing, and student growth." />
 <title>AcademeForge Beta — Future Skills Learning Platform</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -24,11 +25,13 @@ tailwind.config = {
         panel: "#0B1020",
         forge: "#F97316",
         gold: "#F5C451",
-        cyan: "#67E8F9"
+        cyan: "#67E8F9",
+        mint: "#22C55E"
       },
       boxShadow: {
         glow: "0 30px 100px rgba(0,0,0,.45)",
-        orange: "0 20px 70px rgba(249,115,22,.30)"
+        orange: "0 20px 70px rgba(249,115,22,.30)",
+        chat: "0 28px 90px rgba(0,0,0,.50)"
       },
       keyframes: {
         marquee: {
@@ -42,12 +45,22 @@ tailwind.config = {
         modal: {
           "0%": { opacity: "0", transform: "translateY(20px) scale(.96)" },
           "100%": { opacity: "1", transform: "translateY(0) scale(1)" }
+        },
+        chatIn: {
+          "0%": { opacity: "0", transform: "translateY(20px) scale(.96)" },
+          "100%": { opacity: "1", transform: "translateY(0) scale(1)" }
+        },
+        pulseSoft: {
+          "0%,100%": { boxShadow: "0 0 0 0 rgba(249,115,22,.36)" },
+          "50%": { boxShadow: "0 0 0 12px rgba(249,115,22,0)" }
         }
       },
       animation: {
         marquee: "marquee 30s linear infinite",
         float: "float 7s ease-in-out infinite",
-        modal: "modal .25s ease both"
+        modal: "modal .25s ease both",
+        chatIn: "chatIn .22s ease both",
+        pulseSoft: "pulseSoft 2.2s ease-in-out infinite"
       }
     }
   }
@@ -58,13 +71,17 @@ tailwind.config = {
 :root {
   color-scheme: dark;
   --bg: #050816;
+  --bg2: #080c18;
   --text: #f8fafc;
   --muted: #94a3b8;
+  --soft: #cbd5e1;
   --line: rgba(255,255,255,.12);
+  --line2: rgba(255,255,255,.18);
   --brand: #f97316;
   --gold: #f5c451;
   --cyan: #67e8f9;
   --safe: env(safe-area-inset-bottom,0px);
+  --site-pad: clamp(16px, 4vw, 72px);
 }
 
 * {
@@ -76,6 +93,7 @@ tailwind.config = {
 html,
 body {
   margin: 0;
+  width: 100%;
   min-height: 100%;
   font-family: Inter, system-ui, sans-serif;
   background:
@@ -99,19 +117,34 @@ body::before {
   z-index: 0;
 }
 
+button,
+a,
+input,
+textarea {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
 .site {
   position: relative;
   z-index: 1;
 }
 
 .cx {
-  width: min(1280px, calc(100% - 36px));
+  width: min(1540px, calc(100% - 36px));
   margin-inline: auto;
 }
 
 .cw {
-  width: min(1540px, calc(100% - 36px));
+  width: min(1760px, calc(100% - 36px));
   margin-inline: auto;
+}
+
+.full-bleed {
+  width: 100%;
 }
 
 .glass {
@@ -182,18 +215,24 @@ body::before {
   box-shadow: 0 0 0 6px rgba(249,115,22,.15);
 }
 
-.nav a {
+.nav a,
+.nav button {
   position: relative;
   color: #cbd5e1;
   font-weight: 900;
   font-size: .9rem;
+  background: transparent;
+  border: 0;
+  padding: 0;
 }
 
-.nav a:hover {
+.nav a:hover,
+.nav button:hover {
   color: white;
 }
 
-.nav a::after {
+.nav a::after,
+.nav button::after {
   content: "";
   position: absolute;
   left: 0;
@@ -204,15 +243,16 @@ body::before {
   transition: .22s ease;
 }
 
-.nav a:hover::after {
+.nav a:hover::after,
+.nav button:hover::after {
   width: 100%;
 }
 
 .hero-title {
   font-family: Manrope, Inter, sans-serif;
-  font-size: clamp(3.7rem, 8vw, 8.8rem);
+  font-size: clamp(4rem, 8.4vw, 9.8rem);
   line-height: .88;
-  letter-spacing: -.075em;
+  letter-spacing: -.078em;
   font-weight: 900;
 }
 
@@ -261,7 +301,7 @@ body.lock {
 }
 
 .faq.open .ans {
-  max-height: 320px;
+  max-height: 340px;
 }
 
 .faq.open .plus {
@@ -273,10 +313,195 @@ body.lock {
   -webkit-mask-image: linear-gradient(90deg, transparent 0%, black 14%, black 100%);
 }
 
+.ai-chat-shell {
+  position: fixed;
+  right: 22px;
+  bottom: calc(22px + var(--safe));
+  z-index: 95;
+}
+
+.ai-chat-panel {
+  width: min(420px, calc(100vw - 24px));
+  max-height: min(680px, calc(100svh - 110px));
+  display: none;
+  overflow: hidden;
+  border-radius: 2rem;
+  border: 1px solid rgba(255,255,255,.14);
+  background:
+    radial-gradient(circle at 20% 0, rgba(249,115,22,.16), transparent 16rem),
+    radial-gradient(circle at 100% 20%, rgba(103,232,249,.12), transparent 14rem),
+    rgba(5,8,22,.96);
+  box-shadow: 0 28px 90px rgba(0,0,0,.50);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+}
+
+.ai-chat-panel.open {
+  display: flex;
+  flex-direction: column;
+  animation: chatIn .22s ease both;
+}
+
+.ai-chat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 16px;
+  border-bottom: 1px solid rgba(255,255,255,.10);
+}
+
+.ai-chat-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: grid;
+  gap: 12px;
+  max-height: 440px;
+}
+
+.ai-msg {
+  display: grid;
+  gap: 6px;
+  max-width: 92%;
+  padding: 12px 14px;
+  border-radius: 18px;
+  font-size: 14px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.ai-msg.bot {
+  justify-self: start;
+  background: rgba(255,255,255,.075);
+  border: 1px solid rgba(255,255,255,.10);
+  color: #e2e8f0;
+}
+
+.ai-msg.user {
+  justify-self: end;
+  background: linear-gradient(135deg, rgba(249,115,22,.95), rgba(245,196,81,.95));
+  color: #111827;
+  font-weight: 700;
+}
+
+.ai-chat-suggestions {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 0 16px 12px;
+}
+
+.ai-chat-suggestions button {
+  flex: 0 0 auto;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.07);
+  color: #e2e8f0;
+  border-radius: 999px;
+  padding: 9px 12px;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.ai-chat-form {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  padding: 14px;
+  border-top: 1px solid rgba(255,255,255,.10);
+}
+
+.ai-chat-form textarea {
+  min-height: 48px;
+  max-height: 110px;
+  resize: none;
+  border: 1px solid rgba(255,255,255,.12);
+  outline: none;
+  border-radius: 18px;
+  background: rgba(255,255,255,.07);
+  color: #fff;
+  padding: 13px 14px;
+  line-height: 1.4;
+}
+
+.ai-chat-form textarea::placeholder {
+  color: rgba(203,213,225,.68);
+}
+
+.ai-chat-form button {
+  min-width: 58px;
+  border: 0;
+  border-radius: 18px;
+  background: linear-gradient(135deg, var(--brand), var(--gold));
+  color: #111827;
+  font-weight: 1000;
+}
+
+.ai-chat-launcher {
+  margin-left: auto;
+  margin-top: 12px;
+  min-height: 58px;
+  min-width: 58px;
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--brand), var(--gold));
+  color: #111827;
+  font-weight: 1000;
+  box-shadow: 0 22px 70px rgba(249,115,22,.35);
+  animation: pulseSoft 2.2s ease-in-out infinite;
+}
+
+.ai-chat-launcher span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 18px;
+}
+
+.ai-typing {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.ai-typing i {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: #cbd5e1;
+  opacity: .55;
+  animation: typingDot 1s ease-in-out infinite;
+}
+
+.ai-typing i:nth-child(2) {
+  animation-delay: .12s;
+}
+
+.ai-typing i:nth-child(3) {
+  animation-delay: .24s;
+}
+
+@keyframes typingDot {
+  0%,100% { transform: translateY(0); opacity: .4; }
+  50% { transform: translateY(-4px); opacity: 1; }
+}
+
+@media (max-width: 1279px) {
+  .nav-extra {
+    display: none !important;
+  }
+
+  .hero-title {
+    font-size: clamp(3.7rem, 9vw, 7.6rem);
+  }
+}
+
 @media (max-width: 1023px) {
   .hero-img {
     mask-image: linear-gradient(180deg, black 0%, black 52%, transparent 100%);
     -webkit-mask-image: linear-gradient(180deg, black 0%, black 52%, transparent 100%);
+    opacity: .45 !important;
   }
 
   .hero-title {
@@ -290,19 +515,50 @@ body.lock {
     width: min(100% - 24px, 1280px);
   }
 
-  .floatbar {
+  .pbm {
+    padding-bottom: 92px;
+  }
+
+  .ai-chat-shell {
     left: 12px;
     right: 12px;
     bottom: calc(12px + var(--safe));
   }
 
-  .floatbar > div {
+  .ai-chat-panel {
     width: 100%;
-    justify-content: space-between;
+    max-height: calc(100svh - 92px);
+    border-radius: 1.6rem;
   }
 
-  .pbm {
-    padding-bottom: 100px;
+  .ai-chat-body {
+    max-height: calc(100svh - 290px);
+  }
+
+  .ai-chat-launcher {
+    width: 100%;
+  }
+
+  .ai-chat-launcher span {
+    justify-content: center;
+    width: 100%;
+  }
+}
+
+@media (max-width: 390px) {
+  .hero-title {
+    font-size: 3rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
   }
 }
 </style>
@@ -320,7 +576,7 @@ body.lock {
       <div class="flex flex-wrap gap-4">
         <span>● Patna, Bihar, India</span>
         <a href="mailto:academeforge@gmail.com">academeforge@gmail.com</a>
-        <a href="tel:+91XXXXXXXXXX">+91 XXXXX XXXXX</a>
+        <button class="font-bold text-slate-300" onclick="openAIChat('I need help from AcademeForge support.')">AI Help Desk</button>
       </div>
       <div class="flex gap-4 font-bold">
         <a target="_blank" rel="noopener noreferrer" href="https://www.linkedin.com/company/academeforge/">LinkedIn</a>
@@ -351,16 +607,16 @@ body.lock {
   </div>
 
   <header class="sticky top-0 z-50 border-b border-white/10 bg-ink/80 backdrop-blur-2xl">
-    <div class="cw h-20 flex items-center justify-between">
-      <a href="#home" class="flex items-center gap-3">
+    <div class="cw min-h-20 py-3 flex items-center justify-between gap-5">
+      <a href="#home" class="flex items-center gap-3 shrink-0">
         <span class="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-forge to-gold text-ink font-black shadow-orange">AF</span>
         <span>
-          <b class="block font-display text-2xl">AcademeForge</b>
-          <small class="block text-[11px] font-black uppercase tracking-[.24em] text-slate-500">Beta Learning Platform</small>
+          <b class="block font-display text-2xl leading-none">AcademeForge</b>
+          <small class="block mt-1 text-[11px] font-black uppercase tracking-[.24em] text-slate-500">Beta Learning Platform</small>
         </span>
       </a>
 
-      <nav class="nav hidden lg:flex items-center gap-7">
+      <nav class="nav hidden lg:flex items-center justify-center gap-6 xl:gap-7 flex-1">
         <a href="#home">Home</a>
         <a href="#programs">Programs</a>
         <a href="#founder">Founder</a>
@@ -368,9 +624,12 @@ body.lock {
         <a href="#policies">Policies</a>
         <a href="#help">Help Desk</a>
         <a href="#contact">Contact</a>
+        <button class="nav-extra" onclick="soon('Certificate Download')">Certificate</button>
+        <button class="nav-extra" onclick="soon('Student Portal')">Student Portal</button>
+        <button class="nav-extra" onclick="soon('Join as Team Member')">Join Team</button>
       </nav>
 
-      <div class="hidden lg:flex gap-3">
+      <div class="hidden lg:flex gap-3 shrink-0">
         <button class="btn secondary" onclick="soon('Admissions')">Admissions</button>
         <button class="btn primary" onclick="downloadApk()">Install App</button>
       </div>
@@ -400,12 +659,14 @@ body.lock {
 
     <div class="mt-6 grid gap-3">
       <button class="btn primary w-full" onclick="downloadApk()">Install App</button>
+      <button class="btn secondary w-full" onclick="openAIChat('Tell me about AcademeForge.')">Ask AI</button>
+      <button class="btn secondary w-full" onclick="soon('Certificate Download')">Certificate Download</button>
+      <button class="btn secondary w-full" onclick="soon('Student Portal')">Student Portal</button>
       <button class="btn secondary w-full" onclick="soon('Join AcademeForge as Team Member')">Join as Team Member</button>
     </div>
   </aside>
 
   <main>
-
     <section id="home" class="relative min-h-[calc(100vh-112px)] overflow-hidden">
       <div class="absolute inset-0">
         <img src="AFhome.jpg" class="hero-img absolute right-0 top-0 h-full w-full lg:w-[58%] object-cover object-[72%_center] opacity-75" alt="AcademeForge">
@@ -423,7 +684,7 @@ body.lock {
           <div class="mt-9 flex flex-col sm:flex-row gap-3">
             <button class="btn primary" onclick="info('Our Vision',TEXT.vision)">Explore Vision</button>
             <a class="btn secondary" href="#programs">View Programs</a>
-            <button class="btn darkbtn" onclick="soon('Counselling Call')">Book Counselling</button>
+            <button class="btn darkbtn" onclick="openAIChat('Which AcademeForge program is best for me?')">Ask AI Guide</button>
           </div>
 
           <div class="mt-9 grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-3xl">
@@ -445,7 +706,6 @@ body.lock {
             </div>
           </div>
         </div>
-
         <div></div>
       </div>
     </section>
@@ -485,7 +745,7 @@ body.lock {
           </p>
           <div class="mt-8 flex flex-col sm:flex-row gap-3">
             <button class="btn primary" onclick="info('About AcademeForge',TEXT.about)">Read Full Story</button>
-            <button class="btn secondary" onclick="soon('Download Brochure')">Download Brochure</button>
+            <button class="btn secondary" onclick="openAIChat('Tell me the full story of AcademeForge.')">Ask AI About Us</button>
           </div>
         </div>
 
@@ -565,8 +825,8 @@ body.lock {
         </div>
 
         <div class="mt-10 grid md:grid-cols-3 gap-4">
-          <button class="btn primary" onclick="soon('Compare Programs')">Compare Programs</button>
-          <button class="btn secondary" onclick="soon('Program Advisor')">Talk to Program Advisor</button>
+          <button class="btn primary" onclick="openAIChat('Compare AcademeForge programs for me.')">Compare Programs with AI</button>
+          <button class="btn secondary" onclick="openAIChat('Which program should I choose?')">Program Advisor</button>
           <button class="btn secondary" onclick="soon('Portfolio Support')">Portfolio Support</button>
         </div>
       </div>
@@ -594,7 +854,7 @@ body.lock {
 
           <div class="mt-8 flex flex-col sm:flex-row gap-3">
             <button class="btn primary" onclick="info('Founder Profile',TEXT.founder)">Read Profile</button>
-            <button class="btn secondary" onclick="soon('Founder Message Video')">Founder Message</button>
+            <button class="btn secondary" onclick="openAIChat('Tell me about the founder of AcademeForge.')">Ask AI</button>
           </div>
         </div>
 
@@ -689,7 +949,7 @@ body.lock {
             Fees are intentionally marked as “To be announced” until the platform rebuild, admission structure, and batch policies are finalized.
           </p>
           <div class="mt-8 flex flex-col sm:flex-row lg:flex-col xl:flex-row gap-3">
-            <button class="btn primary" onclick="soon('Fee Calculator')">Fee Calculator</button>
+            <button class="btn primary" onclick="openAIChat('Tell me about AcademeForge fees.')">Ask AI About Fees</button>
             <button class="btn secondary" onclick="info('Batch Policy',TEXT.batch)">Batch Policy</button>
           </div>
         </div>
@@ -800,34 +1060,34 @@ body.lock {
           <span class="eyebrow">Help Desk</span>
           <h2 class="mt-6 font-display text-4xl md:text-6xl font-black tracking-[-.05em]">Support routes for every student need.</h2>
           <p class="mt-5 text-slate-400 leading-8">
-            Large platforms make support easy to find. This section adds help center, contact, settings, policies, and update flows.
+            WhatsApp and call are not available right now. Use AcademeForge AI Help Desk for website, program, policy, admission, and support questions.
           </p>
           <div class="mt-8 grid sm:grid-cols-2 gap-3">
-            <button class="btn primary" onclick="soon('Help Center')">Open Help Center</button>
-            <a class="btn secondary" href="mailto:academeforge@gmail.com">Contact Us</a>
+            <button class="btn primary" onclick="openAIChat('I need help with AcademeForge.')">Open AI Help Desk</button>
+            <a class="btn secondary" href="mailto:academeforge@gmail.com">Email Contact</a>
           </div>
         </div>
 
         <div class="grid md:grid-cols-2 gap-4">
-          <button class="glass rounded-[2rem] p-6 text-left card reveal" onclick="soon('Raise Support Ticket')">
+          <button class="glass rounded-[2rem] p-6 text-left card reveal" onclick="openAIChat('I want to raise a support ticket.')">
             <b class="text-3xl text-forge">01</b>
-            <h3 class="mt-4 text-xl font-black">Raise Support Ticket</h3>
-            <p class="mt-2 text-sm leading-7 text-slate-400">For login, batch, certificate, payment, or class-related help.</p>
+            <h3 class="mt-4 text-xl font-black">AI Support Ticket</h3>
+            <p class="mt-2 text-sm leading-7 text-slate-400">Ask AI about login, batch, certificate, payment, or class-related help.</p>
           </button>
 
-          <button class="glass rounded-[2rem] p-6 text-left card reveal" onclick="soon('Settings & Privacy')">
+          <button class="glass rounded-[2rem] p-6 text-left card reveal" onclick="openAIChat('Explain AcademeForge settings and privacy.')">
             <b class="text-3xl text-forge">02</b>
             <h3 class="mt-4 text-xl font-black">Settings & Privacy</h3>
             <p class="mt-2 text-sm leading-7 text-slate-400">Profile, notification, language, account, and privacy preferences.</p>
           </button>
 
-          <button class="glass rounded-[2rem] p-6 text-left card reveal" onclick="soon('Parent Support')">
+          <button class="glass rounded-[2rem] p-6 text-left card reveal" onclick="openAIChat('I am a parent. Tell me about AcademeForge.')">
             <b class="text-3xl text-forge">03</b>
             <h3 class="mt-4 text-xl font-black">Parent Support</h3>
             <p class="mt-2 text-sm leading-7 text-slate-400">For guardians who want admission, safety, batch, or progress information.</p>
           </button>
 
-          <button class="glass rounded-[2rem] p-6 text-left card reveal" onclick="soon('Report a Problem')">
+          <button class="glass rounded-[2rem] p-6 text-left card reveal" onclick="openAIChat('I want to report a website problem.')">
             <b class="text-3xl text-forge">04</b>
             <h3 class="mt-4 text-xl font-black">Report a Problem</h3>
             <p class="mt-2 text-sm leading-7 text-slate-400">Report broken links, app issues, wrong information, or support delays.</p>
@@ -894,6 +1154,10 @@ body.lock {
             </div>
           </div>
         </div>
+
+        <div class="mt-8 text-center">
+          <button class="btn primary" onclick="openAIChat('Answer my question about AcademeForge.')">Ask AI Another Question</button>
+        </div>
       </div>
     </section>
 
@@ -905,11 +1169,11 @@ body.lock {
               <span class="eyebrow">Contact</span>
               <h2 class="mt-6 font-display text-4xl md:text-6xl font-black tracking-[-.05em]">Need help, updates, or collaboration?</h2>
               <p class="mt-5 max-w-2xl leading-8 text-slate-400">
-                Use official routes for admissions, program details, student support, parent support, partnerships, and platform updates.
+                Use official routes for admissions, program details, student support, parent support, partnerships, and platform updates. AI Help Desk is available on the website.
               </p>
               <div class="mt-8 flex flex-col sm:flex-row gap-3">
                 <a class="btn primary" href="mailto:academeforge@gmail.com">Email AcademeForge</a>
-                <button class="btn secondary" onclick="soon('WhatsApp Help Desk')">WhatsApp Help Desk</button>
+                <button class="btn secondary" onclick="openAIChat('I want to contact AcademeForge.')">AI Help Desk</button>
                 <button class="btn secondary" onclick="soon('Partnerships')">Partnerships</button>
               </div>
             </div>
@@ -924,8 +1188,8 @@ body.lock {
                 <a class="text-lg font-black" href="mailto:academeforge@gmail.com">academeforge@gmail.com</a>
               </div>
               <div class="rounded-3xl border border-white/10 bg-white/[.06] p-5">
-                <p class="text-xs font-black uppercase tracking-[.18em] text-slate-500">Phone</p>
-                <a class="text-lg font-black" href="tel:+91XXXXXXXXXX">+91 XXXXX XXXXX</a>
+                <p class="text-xs font-black uppercase tracking-[.18em] text-slate-500">AI Help Desk</p>
+                <button class="text-lg font-black text-forge" onclick="openAIChat('Hello AcademeForge AI.')">Open AI Chat</button>
               </div>
             </div>
           </div>
@@ -941,14 +1205,13 @@ body.lock {
             <button class="glass rounded-3xl p-5 text-left card" onclick="soon('Download Brochure')"><b>Download Brochure</b><span class="mt-2 block text-sm text-slate-500">Program overview</span></button>
             <button class="glass rounded-3xl p-5 text-left card" onclick="soon('Community')"><b>Community</b><span class="mt-2 block text-sm text-slate-500">Student network</span></button>
             <button class="glass rounded-3xl p-5 text-left card" onclick="soon('Certificate Verification')"><b>Certificate Verification</b><span class="mt-2 block text-sm text-slate-500">Verify records</span></button>
-            <button class="glass rounded-3xl p-5 text-left card" onclick="soon('Help Center')"><b>Help Center</b><span class="mt-2 block text-sm text-slate-500">Support articles</span></button>
+            <button class="glass rounded-3xl p-5 text-left card" onclick="openAIChat('Open Help Center for me.')"><b>Help Center</b><span class="mt-2 block text-sm text-slate-500">AI support articles</span></button>
             <button class="glass rounded-3xl p-5 text-left card" onclick="soon('Settings & Privacy')"><b>Settings & Privacy</b><span class="mt-2 block text-sm text-slate-500">Account controls</span></button>
             <button class="glass rounded-3xl p-5 text-left card" onclick="soon('Join AcademeForge as Team Member')"><b>Join AcademeForge as Team Member</b><span class="mt-2 block text-sm text-slate-500">Work with us</span></button>
           </div>
         </div>
       </div>
     </section>
-
   </main>
 
   <footer class="border-t border-white/10 bg-ink/92">
@@ -992,7 +1255,7 @@ body.lock {
           <button class="text-left" onclick="info('Privacy Policy',TEXT.privacy)">Privacy Policy</button>
           <button class="text-left" onclick="info('Terms & Conditions',TEXT.terms)">Terms</button>
           <button class="text-left" onclick="info('Community Policy',TEXT.community)">Community Policy</button>
-          <a href="#help">Help Desk</a>
+          <button class="text-left" onclick="openAIChat('I need support.')">AI Help Desk</button>
         </div>
       </div>
     </div>
@@ -1017,42 +1280,73 @@ body.lock {
     </div>
   </div>
 
-  <div class="floatbar fixed bottom-6 right-6 z-40">
-    <div class="glass rounded-full p-2 flex gap-2">
-      <button onclick="soon('WhatsApp Help Desk')" class="rounded-full bg-emerald-500 px-4 py-3 text-sm font-black">WA</button>
-      <a href="tel:+91XXXXXXXXXX" class="rounded-full bg-sky-500 px-4 py-3 text-sm font-black">Call</a>
-      <button onclick="downloadApk()" class="rounded-full bg-gradient-to-r from-forge to-gold px-4 py-3 text-sm font-black text-ink">App</button>
-      <button onclick="soon('Help Center')" class="hidden sm:block rounded-full bg-white/10 px-4 py-3 text-sm font-black">Help</button>
-    </div>
-  </div>
+  <div class="ai-chat-shell" aria-live="polite">
+    <section id="aiChatPanel" class="ai-chat-panel" aria-label="AcademeForge AI Help Desk">
+      <div class="ai-chat-header">
+        <div class="flex items-center gap-3">
+          <span class="grid h-11 w-11 place-items-center rounded-2xl bg-gradient-to-br from-forge to-gold text-ink font-black">AI</span>
+          <div>
+            <b class="block leading-tight">AcademeForge AI</b>
+            <small id="aiStatus" class="text-xs font-bold text-slate-500">Website guide and help desk</small>
+          </div>
+        </div>
+        <button class="grid h-10 w-10 place-items-center rounded-2xl border border-white/10 bg-white/5 text-xl" onclick="toggleAIChat(false)">×</button>
+      </div>
 
+      <div id="aiChatBody" class="ai-chat-body"></div>
+
+      <div class="ai-chat-suggestions">
+        <button onclick="sendSuggestedAI('What is AcademeForge?')">What is AcademeForge?</button>
+        <button onclick="sendSuggestedAI('Are admissions open?')">Admissions</button>
+        <button onclick="sendSuggestedAI('Tell me about programs.')">Programs</button>
+        <button onclick="sendSuggestedAI('How is student data used?')">Data usage</button>
+      </div>
+
+      <form id="aiChatForm" class="ai-chat-form">
+        <textarea id="aiInput" rows="1" maxlength="600" placeholder="Ask about programs, fees, founder, policies..."></textarea>
+        <button type="submit">Send</button>
+      </form>
+    </section>
+
+    <button id="aiLauncher" class="ai-chat-launcher" onclick="toggleAIChat(true)">
+      <span>Ask AcademeForge AI</span>
+    </button>
+  </div>
 </div>
 
 <script>
 "use strict";
 
 /* =========================================================
-   ACADEMEFORGE WEBSITE SCRIPT
-   
+   CONFIG
 ========================================================= */
 
 const ACADEMEFORGE_ANALYTICS_ENDPOINT =
   "https://afooyyydhlwngzssgqih.supabase.co/functions/v1/academeforge-analytics";
 
+const ACADEMEFORGE_AI_ENDPOINT =
+  "https://afooyyydhlwngzssgqih.supabase.co/functions/v1/academeforge-ai-chat";
+
 const APK_URL = "academeforge.apk";
 
-const ANALYTICS_CACHE_KEY = "academeforge_analytics_cache_v2";
-const DEVICE_ID_KEY = "academeforge_device_id_v2";
+const ANALYTICS_CACHE_KEY = "academeforge_analytics_cache_v3";
+const DEVICE_ID_KEY = "academeforge_device_id_v3";
+const AI_SESSION_KEY = "academeforge_ai_session_v1";
+const AI_HISTORY_KEY = "academeforge_ai_history_v1";
+
+/* =========================================================
+   WEBSITE KNOWLEDGE
+========================================================= */
 
 const TEXT = {
   vision:
-    "AcademeForge exists to help students learn beyond textbooks, marks, and memorization. The vision is to build a modern learning ecosystem where students develop practical skills, creativity, confidence, AI fluency, communication, and execution ability.\\n\\nThe platform is designed for students who want to become builders, creators, problem-solvers, and independent learners.",
+    "AcademeForge exists to help students learn beyond textbooks, marks, and memorization. The vision is to build a modern learning ecosystem where students develop practical skills, creativity, confidence, AI fluency, communication, and execution ability.\n\nThe platform is designed for students who want to become builders, creators, problem-solvers, and independent learners.",
 
   about:
-    "AcademeForge began in January 2024 as a Telegram community for Class 10 students where learners could solve doubts, participate in quizzes, and support each other academically. It is now being rebuilt as a premium practical learning platform.",
+    "AcademeForge began in January 2024 as a Telegram community for Class 10 students where learners could solve doubts, participate in quizzes, and support each other academically. It is now being rebuilt as a premium practical learning platform.\n\nAcademeForge focuses on practical skills, digital creativity, AI-powered learning, coding logic, freelancing, communication, portfolio building, and student confidence.",
 
   founder:
-    "Devraj Kumar is the Founder of AcademeForge. He started the platform as a student with direct understanding of how students struggle with outdated learning systems, lack of practical exposure, and confusion around modern digital skills.\\n\\nThe long-term goal is to impact 100,000+ students with practical, AI-ready, beginner-friendly learning.",
+    "Devraj Kumar is the Founder of AcademeForge. He started the platform as a student with direct understanding of how students struggle with outdated learning systems, lack of practical exposure, and confusion around modern digital skills.\n\nThe long-term goal is to impact 100,000+ students with practical, AI-ready, beginner-friendly learning.",
 
   privacy:
     "AcademeForge may collect basic information needed for learning access, support, communication, analytics, security, and platform improvement. Student data should not be sold to advertisers. This beta text should be reviewed before official legal publication.",
@@ -1070,8 +1364,32 @@ const TEXT = {
     "By using AcademeForge website, app, community, or learning services, users should follow platform rules, respect intellectual property, avoid misuse, and use official channels for support.",
 
   safety:
-    "Students should use only official AcademeForge links, avoid sharing OTPs or passwords, and report suspicious messages. Help desk and support channels should be used for platform issues."
+    "Students should use only official AcademeForge links, avoid sharing OTPs or passwords, and report suspicious messages. Help desk and support channels should be used for platform issues.",
+
+  programs:
+    "AcademeForge planned programs include Video & Media Editing, Creative & Graphic Design, AI Coding & Logic Foundation, and Freelancing & Monetization. Fees are to be announced. Admissions are currently under rebuild.",
+
+  fees:
+    "Fees are currently marked as To be announced. Final fee structure will be published after the platform rebuild, admission structure, and batch policies are finalized.",
+
+  support:
+    "WhatsApp and call support are not available right now. Students can use AcademeForge AI Help Desk on the website or email academeforge@gmail.com."
 };
+
+const ACADEMEFORGE_KNOWLEDGE = [
+  { key: "vision", title: "Vision", content: TEXT.vision },
+  { key: "about", title: "About AcademeForge", content: TEXT.about },
+  { key: "founder", title: "Founder", content: TEXT.founder },
+  { key: "programs", title: "Programs", content: TEXT.programs },
+  { key: "fees", title: "Fees", content: TEXT.fees },
+  { key: "privacy", title: "Privacy Policy", content: TEXT.privacy },
+  { key: "data", title: "Student Data Usage", content: TEXT.data },
+  { key: "batch", title: "Batch Policy", content: TEXT.batch },
+  { key: "community", title: "Community Policy", content: TEXT.community },
+  { key: "terms", title: "Terms and Conditions", content: TEXT.terms },
+  { key: "safety", title: "Safety and Support", content: TEXT.safety },
+  { key: "support", title: "Support", content: TEXT.support }
+];
 
 /* =========================================================
    SAFE DOM HELPERS
@@ -1212,6 +1530,21 @@ function getDeviceId() {
   }
 }
 
+function getAISessionId() {
+  try {
+    let value = localStorage.getItem(AI_SESSION_KEY);
+
+    if (!value) {
+      value = "chat_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2);
+      localStorage.setItem(AI_SESSION_KEY, value);
+    }
+
+    return value;
+  } catch (error) {
+    return "chat_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2);
+  }
+}
+
 function getAnalyticsCache() {
   try {
     const raw = localStorage.getItem(ANALYTICS_CACHE_KEY);
@@ -1255,13 +1588,11 @@ function setAnalyticsCache(nextCache) {
 function setCounterText(elementId, value) {
   const element = byId(elementId);
   if (!element) return;
-
   element.textContent = formatCount(value);
 }
 
 function updateCountersFromCache() {
   const cache = getAnalyticsCache();
-
   setCounterText("apkCount", cache.apk_downloads);
   setCounterText("visitCount", cache.website_visits);
 }
@@ -1282,7 +1613,7 @@ function updateCountersFromServerData(data) {
 }
 
 /* =========================================================
-   EDGE FUNCTION ANALYTICS
+   ANALYTICS EDGE FUNCTION
 ========================================================= */
 
 async function sendAnalytics(action, extraPayload) {
@@ -1376,14 +1707,7 @@ async function trackWebsiteVisit() {
   setAnalyticsCache(optimisticCache);
   updateCountersFromCache();
 
-  const result = await sendAnalytics("website_visit", {});
-
-  if (!result || !result.success) {
-    setAnalyticsCache({
-      ...optimisticCache,
-      last_visit_tracked_at: now
-    });
-  }
+  await sendAnalytics("website_visit", {});
 }
 
 async function downloadApk() {
@@ -1416,13 +1740,213 @@ async function downloadApk() {
 }
 
 /* =========================================================
+   AI CHAT LOCAL FALLBACK
+========================================================= */
+
+function findLocalAnswer(question) {
+  const q = String(question || "").toLowerCase();
+
+  const checks = [
+    { keys: ["fee", "fees", "price", "pricing", "cost"], answer: TEXT.fees },
+    { keys: ["admission", "apply", "enroll", "join course"], answer: "Admissions are currently under rebuild. New batches and official admission details will be announced after the platform structure is finalized." },
+    { keys: ["program", "course", "coding", "design", "editing", "freelancing"], answer: TEXT.programs },
+    { keys: ["founder", "devraj"], answer: TEXT.founder },
+    { keys: ["about", "story", "academe"], answer: TEXT.about },
+    { keys: ["vision", "mission"], answer: TEXT.vision },
+    { keys: ["privacy", "data"], answer: TEXT.data + "\n\n" + TEXT.privacy },
+    { keys: ["batch", "class", "schedule"], answer: TEXT.batch },
+    { keys: ["community", "telegram"], answer: TEXT.community },
+    { keys: ["support", "help", "contact", "call", "whatsapp"], answer: TEXT.support },
+    { keys: ["certificate"], answer: "Certificate verification and certificate download are planned features. They are currently updating soon." },
+    { keys: ["team", "career", "member"], answer: "Join as Team Member is planned. The website will show Updating soon until the official team application system is ready." }
+  ];
+
+  for (const item of checks) {
+    if (item.keys.some(function (key) { return q.includes(key); })) {
+      return item.answer;
+    }
+  }
+
+  return "AcademeForge is a beta practical-learning platform being rebuilt for future-ready students. You can ask me about programs, admissions, fees, founder, policies, student data usage, batches, certificates, or support.";
+}
+
+function getAIHistory() {
+  try {
+    const raw = localStorage.getItem(AI_HISTORY_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    if (!Array.isArray(parsed)) return [];
+    return parsed.slice(-20);
+  } catch (error) {
+    return [];
+  }
+}
+
+function setAIHistory(history) {
+  try {
+    localStorage.setItem(AI_HISTORY_KEY, JSON.stringify(history.slice(-20)));
+  } catch (error) {}
+}
+
+function addAIHistory(role, content) {
+  const history = getAIHistory();
+  history.push({
+    role: role,
+    content: String(content || "").slice(0, 2000),
+    at: new Date().toISOString()
+  });
+  setAIHistory(history);
+}
+
+function appendAIMessage(role, content, options) {
+  const body = byId("aiChatBody");
+  if (!body) return null;
+
+  const node = document.createElement("div");
+  node.className = "ai-msg " + (role === "user" ? "user" : "bot");
+
+  if (options && options.typing) {
+    node.innerHTML = '<span class="ai-typing"><i></i><i></i><i></i></span>';
+  } else {
+    node.textContent = String(content || "");
+  }
+
+  body.appendChild(node);
+  body.scrollTop = body.scrollHeight;
+  return node;
+}
+
+function setAIStatus(text) {
+  const status = byId("aiStatus");
+  if (status) status.textContent = text;
+}
+
+function toggleAIChat(forceOpen) {
+  const panel = byId("aiChatPanel");
+  const launcher = byId("aiLauncher");
+  if (!panel || !launcher) return;
+
+  const shouldOpen =
+    typeof forceOpen === "boolean"
+      ? forceOpen
+      : !panel.classList.contains("open");
+
+  panel.classList.toggle("open", shouldOpen);
+  launcher.style.display = shouldOpen ? "none" : "inline-flex";
+
+  if (shouldOpen) {
+    seedAIChat();
+    const input = byId("aiInput");
+    if (input) setTimeout(function () { input.focus(); }, 120);
+  }
+}
+
+function seedAIChat() {
+  const body = byId("aiChatBody");
+  if (!body || body.dataset.seeded === "true") return;
+
+  const history = getAIHistory();
+
+  if (history.length > 0) {
+    history.forEach(function (item) {
+      appendAIMessage(item.role === "user" ? "user" : "bot", item.content);
+    });
+  } else {
+    const welcome = "Hi. I am AcademeForge AI Help Desk. Ask me about programs, admissions, fees, founder, policies, student data usage, certificates, or support.";
+    appendAIMessage("bot", welcome);
+    addAIHistory("assistant", welcome);
+  }
+
+  body.dataset.seeded = "true";
+}
+
+function openAIChat(prefill) {
+  toggleAIChat(true);
+
+  if (prefill) {
+    const input = byId("aiInput");
+    if (input) {
+      input.value = prefill;
+      input.focus();
+    }
+  }
+}
+
+function sendSuggestedAI(text) {
+  const input = byId("aiInput");
+  if (input) input.value = text;
+  submitAIQuestion();
+}
+
+async function submitAIQuestion() {
+  const input = byId("aiInput");
+  if (!input) return;
+
+  const question = input.value.trim();
+  if (!question) return;
+
+  input.value = "";
+  appendAIMessage("user", question);
+  addAIHistory("user", question);
+
+  const typingNode = appendAIMessage("bot", "", { typing: true });
+  setAIStatus("Thinking...");
+
+  const fallbackAnswer = findLocalAnswer(question);
+
+  if (!navigator.onLine) {
+    if (typingNode) typingNode.textContent = fallbackAnswer;
+    addAIHistory("assistant", fallbackAnswer);
+    setAIStatus("Offline fallback answer");
+    return;
+  }
+
+  try {
+    const response = await fetch(ACADEMEFORGE_AI_ENDPOINT, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        question: question,
+        device_id: getDeviceId(),
+        session_id: getAISessionId(),
+        page_url: window.location.href,
+        user_agent: navigator.userAgent,
+        website_knowledge: ACADEMEFORGE_KNOWLEDGE
+      }),
+      cache: "no-store"
+    });
+
+    let result = null;
+
+    try {
+      result = await response.json();
+    } catch (jsonError) {
+      result = null;
+    }
+
+    const answer =
+      response.ok && result && result.success && result.answer
+        ? String(result.answer)
+        : fallbackAnswer;
+
+    if (typingNode) typingNode.textContent = answer;
+    addAIHistory("assistant", answer);
+    setAIStatus(response.ok ? "Website guide and help desk" : "Local fallback answer");
+  } catch (error) {
+    if (typingNode) typingNode.textContent = fallbackAnswer;
+    addAIHistory("assistant", fallbackAnswer);
+    setAIStatus("Local fallback answer");
+  }
+}
+
+/* =========================================================
    OFFLINE BANNER
 ========================================================= */
 
 function offlineSync() {
   const offline = byId("offline");
   if (!offline) return;
-
   offline.classList.toggle("hidden", navigator.onLine);
 }
 
@@ -1440,7 +1964,6 @@ window.addEventListener("offline", offlineSync);
 function openMobileMenu() {
   const menu = byId("menu");
   if (!menu) return;
-
   menu.classList.add("open");
   document.body.classList.add("lock");
 }
@@ -1448,7 +1971,6 @@ function openMobileMenu() {
 function closeMobileMenu() {
   const menu = byId("menu");
   if (!menu) return;
-
   menu.classList.remove("open");
   document.body.classList.remove("lock");
 }
@@ -1477,40 +1999,17 @@ function initMobileMenu() {
 function initFaq() {
   qsa(".faq").forEach(function (faq) {
     faq.addEventListener("click", function () {
-      qsa(".faq.open").forEach(function (item) {
-        if (item !== faq) item.classList.remove("open");
-      });
-
       faq.classList.toggle("open");
     });
   });
 }
 
-function initModalEvents() {
-  const modal = byId("modal");
-
-  if (modal) {
-    modal.addEventListener("click", function (event) {
-      if (event.target === modal) {
-        closeModal();
-      }
-    });
-  }
-
-  document.addEventListener("keydown", function (event) {
-    if (event.key === "Escape") {
-      closeModal();
-      closeMobileMenu();
-    }
-  });
-}
-
-function initRevealAnimations() {
-  const elements = qsa(".reveal");
+function initReveal() {
+  const nodes = qsa(".reveal");
 
   if (!("IntersectionObserver" in window)) {
-    elements.forEach(function (element) {
-      element.classList.add("show");
+    nodes.forEach(function (node) {
+      node.classList.add("show");
     });
     return;
   }
@@ -1525,41 +2024,87 @@ function initRevealAnimations() {
       });
     },
     {
-      threshold: 0.12,
-      rootMargin: "0px 0px -40px 0px"
+      threshold: 0.12
     }
   );
 
-  elements.forEach(function (element) {
-    observer.observe(element);
+  nodes.forEach(function (node) {
+    observer.observe(node);
   });
 }
 
-function initExternalSoonButtons() {
-  qsa("[data-soon]").forEach(function (button) {
-    button.addEventListener("click", function () {
-      soon(button.getAttribute("data-soon") || "Feature");
+function initModalClose() {
+  const modal = byId("modal");
+
+  if (modal) {
+    modal.addEventListener("click", function (event) {
+      if (event.target === modal) {
+        closeModal();
+      }
     });
+  }
+
+  document.addEventListener("keydown", function (event) {
+    if (event.key === "Escape") {
+      closeModal();
+      toggleAIChat(false);
+      closeMobileMenu();
+    }
   });
 }
 
-/* =========================================================
-   BOOT
-========================================================= */
+function initAIChat() {
+  const form = byId("aiChatForm");
+  const input = byId("aiInput");
 
-document.addEventListener("DOMContentLoaded", async function () {
+  if (form) {
+    form.addEventListener("submit", function (event) {
+      event.preventDefault();
+      submitAIQuestion();
+    });
+  }
+
+  if (input) {
+    input.addEventListener("keydown", function (event) {
+      if (event.key === "Enter" && !event.shiftKey) {
+        event.preventDefault();
+        submitAIQuestion();
+      }
+    });
+
+    input.addEventListener("input", function () {
+      input.style.height = "auto";
+      input.style.height = Math.min(input.scrollHeight, 110) + "px";
+    });
+  }
+}
+
+function initNoLinkButtons() {
+  qsa("button").forEach(function (button) {
+    const hasHandler = button.getAttribute("onclick");
+    const type = button.getAttribute("type");
+
+    if (!hasHandler && type !== "submit" && !button.id) {
+      button.addEventListener("click", function () {
+        soon(button.textContent.trim() || "Feature");
+      });
+    }
+  });
+}
+
+function init() {
   offlineSync();
-
+  updateCountersFromCache();
   initMobileMenu();
   initFaq();
-  initModalEvents();
-  initRevealAnimations();
-  initExternalSoonButtons();
+  initReveal();
+  initModalClose();
+  initAIChat();
+  initNoLinkButtons();
+  trackWebsiteVisit();
+}
 
-  updateCountersFromCache();
-
-  await trackWebsiteVisit();
-});
+document.addEventListener("DOMContentLoaded", init);
 </script>
 </body>
 </html>
